@@ -78,6 +78,10 @@ button:hover {
 .btn-secondary:hover {
   background-color: #059669;
 }
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
 
 /* Leaderboard Table */
 table {
