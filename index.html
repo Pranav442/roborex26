@@ -1,41 +1,56 @@
 <!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RoboMaze Live Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
-</head>
-<body>
-    <div class="card" style="text-align: center;">
-        <h2>RoboMaze Live</h2>
-        <model-viewer src="model.glb" auto-rotate camera-controls></model-viewer>
+    <link rel="stylesheet" href="css/style.css" />
+    <script
+      type="module"
+      src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"
+    ></script>
+  </head>
+  <body>
+    <div class="card" style="text-align: center">
+      <h2>RoboMaze Live</h2>
+      <model-viewer
+        src="model2.glb"
+        auto-rotate
+        shadow-intensity="1.5"
+        shadow-softness="1"
+        ar
+        rotation-per-second="30deg"
+        camera-controls
+        tone-mapping="commerce"
+        exposure="1.2"
+      ></model-viewer>
     </div>
 
-    <div class="card" style="text-align: center;">
-        <h3>ON TRACK: <span class="data-point" id="current">Waiting...</span></h3>
-        <p>Next Up: <span id="next">---</span></p>
+    <div class="card" style="text-align: center">
+      <h3>ON TRACK: <span class="data-point" id="current">Waiting...</span></h3>
+      <p>Next Up: <span id="next">---</span></p>
     </div>
 
     <div class="card">
-        <h3>Live Leaderboard</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Team</th>
-                    <th>Raw Time</th>
-                    <th>Penalties</th>
-                    <th>Final Time</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboardBody">
-                <tr><td colspan="5" style="text-align:center;">No runs logged yet.</td></tr>
-            </tbody>
-        </table>
+      <h3>Live Leaderboard</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team</th>
+            <th>Raw Time</th>
+            <th>Penalties</th>
+            <th>Final Time</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <tr>
+            <td colspan="5" style="text-align: center">No runs logged yet.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <script type="module" src="js/index.js"></script>
-</body>
+  </body>
 </html>
