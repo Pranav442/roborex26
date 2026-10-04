@@ -9,12 +9,17 @@ onValue(activeRef, (snapshot) => {
         document.getElementById("current").textContent = data.currentTeam || "N/A";
         document.getElementById("next").textContent = data.nextTeam || "---";
     }
+}, (error) => {
+    console.error("Unable to load live track data:", error);
 });
 
 // Helper: Convert MM:SS to total seconds for sorting
 function timeToSeconds(timeStr) {
-    const parts = timeStr.split(":");
-    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    const match = /^(\d+):([0-5]\d)$/.exec(String(timeStr));
+    if (!match) {
+        return Number.POSITIVE_INFINITY;
+    }
+    return Number(match[1]) * 60 + Number(match[2]);
 }
 
 // Helper: Convert total seconds back to MM:SS for display
@@ -34,13 +39,25 @@ onValue(runsRef, (snapshot) => {
         return;
     }
 
-    const runsArray = Object.values(data).map(run => {
+    const runsArray = Object.values(data).flatMap((run) => {
+        if (!run || typeof run !== "object") {
+            return [];
+        }
+
         const rawSeconds = timeToSeconds(run.time);
-        const penaltySeconds = run.penalties * 5; // Assuming +5 seconds per penalty
+        const penalties = Number.isInteger(run.penalties) && run.penalties >= 0
+            ? run.penalties
+            : 0;
+        const penaltySeconds = penalties * 5;
         const finalSeconds = rawSeconds + penaltySeconds;
-        
+
+        if (!Number.isFinite(rawSeconds) || typeof run.team !== "string") {
+            return [];
+        }
+
         return {
             ...run,
+            penalties,
             finalSeconds: finalSeconds,
             finalDisplay: secondsToTime(finalSeconds)
         };
@@ -51,13 +68,23 @@ onValue(runsRef, (snapshot) => {
     tbody.innerHTML = "";
     runsArray.forEach((run, index) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>#${index + 1}</td>
-            <td>${run.team}</td>
-            <td>${run.time}</td>
-            <td>${run.penalties}</td>
-            <td style="font-weight:bold;">${run.finalDisplay}</td>
-        `;
+        const cells = [
+            `#${index + 1}`,
+            run.team,
+            run.time,
+            String(run.penalties),
+            run.finalDisplay,
+        ];
+        cells.forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+        tr.lastElementChild.style.fontWeight = "bold";
         tbody.appendChild(tr);
     });
+}, (error) => {
+    console.error("Unable to load leaderboard data:", error);
+    document.getElementById("leaderboardBody").innerHTML =
+        '<tr><td colspan="5" style="text-align:center;">Unable to load leaderboard.</td></tr>';
 });

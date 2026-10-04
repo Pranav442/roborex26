@@ -70,8 +70,8 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 // 4. Send Live Data
 document.getElementById("updateLiveBtn").addEventListener("click", () => {
     const payload = {
-        currentTeam: document.getElementById("currentTeam").value || "N/A",
-        nextTeam: document.getElementById("nextTeam").value || "---",
+        currentTeam: document.getElementById("currentTeam").value.trim() || "N/A",
+        nextTeam: document.getElementById("nextTeam").value.trim() || "---",
     };
 
     set(ref(database, "active_track/"), payload)
@@ -81,13 +81,15 @@ document.getElementById("updateLiveBtn").addEventListener("click", () => {
 
 // 5. Submit Completed Run
 document.getElementById("submitRunBtn").addEventListener("click", () => {
-    const team = document.getElementById("logTeam").value;
-    const time = document.getElementById("logTime").value;
-    const penalties = parseInt(
-        document.getElementById("logPenalties").value || 0,
+    const team = document.getElementById("logTeam").value.trim();
+    const time = document.getElementById("logTime").value.trim();
+    const penalties = Number.parseInt(
+        document.getElementById("logPenalties").value || "0",
+        10,
     );
 
-    if (!team || !time.includes(":")) {
+    if (!team || !/^\d+:[0-5]\d$/.test(time) ||
+        !Number.isInteger(penalties) || penalties < 0) {
         alert("Please enter a valid team name and time in MM:SS format.");
         return;
     }
