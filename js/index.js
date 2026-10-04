@@ -1,90 +1,154 @@
-import { database } from './firebase-config.js';
-import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { app } from "./firebase-config.js";
+import {
+  getDatabase,
+  ref,
+  onValue,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 1. Listen for Active Track Updates
-const activeRef = ref(database, "active_track/");
-onValue(activeRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        document.getElementById("current").textContent = data.currentTeam || "N/A";
-        document.getElementById("next").textContent = data.nextTeam || "---";
-    }
-}, (error) => {
-    console.error("Unable to load live track data:", error);
+const database = getDatabase(app);
+const PENALTY_SECONDS = 5;
+
+const $ = (id) => document.getElementById(id);
+const currentEl = $("current");
+const nextEl = $("next");
+const tbody = $("leaderboardBody");
+const searchInput = $("teamSearch");
+const searchClear = $("searchClear");
+const searchCount = $("searchCount");
+
+let rankedRuns = []; // full sorted leaderboard (with global rank)
+let loaded = false;
+let loadError = false;
+let currentTeam = "";
+
+// ---------- helpers ----------
+const normalize = (s) => String(s).trim().toLowerCase();
+
+function timeToSeconds(str) {
+  const m = /^(\d+):([0-5]\d)$/.exec(String(str));
+  return m ? Number(m[1]) * 60 + Number(m[2]) : Number.NaN;
+}
+
+function secondsToTime(total) {
+  const m = String(Math.floor(total / 60)).padStart(2, "0");
+  const s = String(total % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function messageRow(text) {
+  const tr = document.createElement("tr");
+  const td = document.createElement("td");
+  td.colSpan = 5;
+  td.className = "empty";
+  td.textContent = text;
+  tr.appendChild(td);
+  return tr;
+}
+
+// ---------- live track ----------
+onValue(
+  ref(database, "active_track/"),
+  (snap) => {
+    const data = snap.val();
+    if (!data) return;
+    currentTeam = data.currentTeam || "";
+    currentEl.textContent = data.currentTeam || "N/A";
+    nextEl.textContent = data.nextTeam || "---";
+    render();
+  },
+  (err) => console.error("Unable to load live track data:", err),
+);
+
+// ---------- leaderboard ----------
+onValue(
+  ref(database, "completed_runs/"),
+  (snap) => {
+    const data = snap.val() || {};
+    const runs = Object.values(data).flatMap((run) => {
+      if (!run || typeof run !== "object" || typeof run.team !== "string") return [];
+      const raw = timeToSeconds(run.time);
+      if (!Number.isFinite(raw)) return [];
+      const penalties = Number.isInteger(run.penalties) && run.penalties >= 0 ? run.penalties : 0;
+      const final = raw + penalties * PENALTY_SECONDS;
+      return [{ team: run.team, time: run.time, penalties, final }];
+    });
+
+    runs.sort((a, b) => a.final - b.final);
+
+    // Equal final times share a rank (competition ranking: 1, 2, 2, 4)
+    rankedRuns = runs.map((run, i) => ({
+      ...run,
+      rank: i > 0 && run.final === runs[i - 1].final ? null : i + 1,
+    }));
+    rankedRuns.forEach((run, i) => {
+      if (run.rank === null) run.rank = rankedRuns[i - 1].rank;
+    });
+
+    loaded = true;
+    loadError = false;
+    render();
+  },
+  (err) => {
+    console.error("Unable to load leaderboard data:", err);
+    loadError = true;
+    render();
+  },
+);
+
+// ---------- render + search ----------
+function render() {
+  const query = normalize(searchInput.value);
+  searchClear.hidden = !query;
+  tbody.replaceChildren();
+  searchCount.textContent = "";
+
+  if (loadError) {
+    tbody.appendChild(messageRow("Unable to load leaderboard."));
+    return;
+  }
+  if (!loaded) {
+    tbody.appendChild(messageRow("Loading..."));
+    return;
+  }
+  if (rankedRuns.length === 0) {
+    tbody.appendChild(messageRow("No runs logged yet."));
+    return;
+  }
+
+  const rows = query
+    ? rankedRuns.filter((run) => normalize(run.team).includes(query))
+    : rankedRuns;
+
+  if (query) {
+    searchCount.textContent = `${rows.length} of ${rankedRuns.length} teams match "${searchInput.value.trim()}"`;
+  }
+  if (rows.length === 0) {
+    tbody.appendChild(messageRow("No matching team found."));
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  rows.forEach((run) => {
+    const tr = document.createElement("tr");
+    if (run.rank <= 3) tr.classList.add(`rank-${run.rank}`);
+    if (currentTeam && normalize(run.team) === normalize(currentTeam)) tr.classList.add("on-track");
+
+    [`#${run.rank}`, run.team, run.time, String(run.penalties), secondsToTime(run.final)].forEach((v) => {
+      const td = document.createElement("td");
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
+}
+
+searchInput.addEventListener("input", render);
+searchClear.addEventListener("click", () => {
+  searchInput.value = "";
+  render();
+  searchInput.focus();
 });
-
-// Helper: Convert MM:SS to total seconds for sorting
-function timeToSeconds(timeStr) {
-    const match = /^(\d+):([0-5]\d)$/.exec(String(timeStr));
-    if (!match) {
-        return Number.POSITIVE_INFINITY;
-    }
-    return Number(match[1]) * 60 + Number(match[2]);
-}
-
-// Helper: Convert total seconds back to MM:SS for display
-function secondsToTime(totalSeconds) {
-    const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-    const s = (totalSeconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-}
-
-const runsRef = ref(database, "completed_runs/");
-onValue(runsRef, (snapshot) => {
-    const data = snapshot.val();
-    const tbody = document.getElementById("leaderboardBody");
-    
-    if (!data) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No runs logged yet.</td></tr>';
-        return;
-    }
-
-    const runsArray = Object.values(data).flatMap((run) => {
-        if (!run || typeof run !== "object") {
-            return [];
-        }
-
-        const rawSeconds = timeToSeconds(run.time);
-        const penalties = Number.isInteger(run.penalties) && run.penalties >= 0
-            ? run.penalties
-            : 0;
-        const penaltySeconds = penalties * 5;
-        const finalSeconds = rawSeconds + penaltySeconds;
-
-        if (!Number.isFinite(rawSeconds) || typeof run.team !== "string") {
-            return [];
-        }
-
-        return {
-            ...run,
-            penalties,
-            finalSeconds: finalSeconds,
-            finalDisplay: secondsToTime(finalSeconds)
-        };
-    });
-
-    runsArray.sort((a, b) => a.finalSeconds - b.finalSeconds);
-
-    tbody.innerHTML = "";
-    runsArray.forEach((run, index) => {
-        const tr = document.createElement("tr");
-        const cells = [
-            `#${index + 1}`,
-            run.team,
-            run.time,
-            String(run.penalties),
-            run.finalDisplay,
-        ];
-        cells.forEach((value) => {
-            const td = document.createElement("td");
-            td.textContent = value;
-            tr.appendChild(td);
-        });
-        tr.lastElementChild.style.fontWeight = "bold";
-        tbody.appendChild(tr);
-    });
-}, (error) => {
-    console.error("Unable to load leaderboard data:", error);
-    document.getElementById("leaderboardBody").innerHTML =
-        '<tr><td colspan="5" style="text-align:center;">Unable to load leaderboard.</td></tr>';
+searchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") searchClear.click();
 });

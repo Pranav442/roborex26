@@ -1,6 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB9SzR-7VPtXO8DRz-mhiveWYlUYPmhG-I",
@@ -10,9 +8,9 @@ const firebaseConfig = {
   storageBucket: "roborex-2026.firebasestorage.app",
   messagingSenderId: "548873049659",
   appId: "1:548873049659:web:2809eb01a85f5990b02e1e",
-  measurementId: "G-3WEEYWQWJC"
+  measurementId: "G-3WEEYWQWJC",
 };
 
-const app = initializeApp(firebaseConfig);
-export const database = getDatabase(app);
-export const auth = getAuth(app);
+// Shared app instance. Database/Auth are created only where needed
+// so the public dashboard doesn't download the Auth SDK.
+export const app = initializeApp(firebaseConfig);

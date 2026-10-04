@@ -3,64 +3,85 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RoboMaze Admin</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#121212" />
+    <title>ROBOREX 2026 · RoboMaze Admin</title>
+    <link rel="icon" type="image/png" href="assets/images/elesa-logo.png" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
 
   <body>
-    <form id="loginForm" class="card admin-panel">
-      <h2>Admin Login</h2>
-      <label>Email:</label>
-      <input
-        type="email"
-        id="email"
-        placeholder="Enter your email"
-        autocomplete="username"
-        required
-      />
-      <label>Password:</label>
-      <input
-        type="password"
-        id="password"
-        placeholder="Enter your password"
-        autocomplete="current-password"
-        required
-      />
-      <button id="loginBtn" type="submit">Login</button>
-    </form>
-    <div id="dashboardSection" style="display: none">
-      <div class="card admin-panel">
-        <h2>Live Track Control</h2>
-        <label>Current Team Playing:</label>
-        <input type="text" id="currentTeam" placeholder="e.g. Photon Freaks" />
-        <label>Next Team Up:</label>
-        <input type="text" id="nextTeam" placeholder="e.g. PotatoCPU" />
-        <button id="updateLiveBtn">Update Live Screen</button>
-        <button
-          id="logoutBtn"
-          style="background-color: #e74c3c; margin-top: 10px"
-        >
-          Logout
-        </button>
-      </div>
+    <main class="container" style="padding-top: 24px">
+      <form id="loginForm" class="card admin-panel">
+        <h2>Admin Login</h2>
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="Enter your email"
+          autocomplete="username"
+          required
+        />
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          required
+        />
+        <button id="loginBtn" type="submit">Login</button>
+        <p class="status" id="loginStatus" role="status"></p>
+      </form>
 
-      <div class="card admin-panel">
-        <h2>Log Completed Run</h2>
-        <p style="font-size: 12px; color: #666">
-          Submit this when a team finishes the maze to add them to the
-          leaderboard.
-        </p>
-        <label>Team Name:</label>
-        <input type="text" id="logTeam" placeholder="Team Name" />
-        <label>Raw Time (MM:SS):</label>
-        <input type="text" id="logTime" placeholder="02:30" />
-        <label>Penalties (+5 sec each):</label>
-        <input type="number" id="logPenalties" placeholder="0" />
-        <button id="submitRunBtn" class="btn-secondary">
-          Submit Final Score
-        </button>
+      <div id="dashboardSection" hidden>
+        <section class="card admin-panel">
+          <h2>Live Track Control</h2>
+          <label for="currentTeam">Current Team Playing</label>
+          <input
+            type="text"
+            id="currentTeam"
+            placeholder="e.g. Photon Freaks"
+          />
+          <label for="nextTeam">Next Team Up</label>
+          <input type="text" id="nextTeam" placeholder="e.g. PotatoCPU" />
+          <button id="updateLiveBtn" type="button">Update Live Screen</button>
+          <p class="status" id="liveStatus" role="status"></p>
+          <button id="logoutBtn" type="button" class="btn-danger">
+            Logout
+          </button>
+        </section>
+
+        <section class="card admin-panel">
+          <h2>Log Completed Run</h2>
+          <p class="hint">
+            Submit when a team finishes the maze to add them to the leaderboard.
+          </p>
+          <label for="logTeam">Team Name</label>
+          <input type="text" id="logTeam" placeholder="Team Name" />
+          <label for="logTime">Raw Time (MM:SS)</label>
+          <input
+            type="text"
+            id="logTime"
+            placeholder="02:30"
+            inputmode="numeric"
+          />
+          <label for="logPenalties">Penalties (+5 sec each)</label>
+          <input
+            type="number"
+            id="logPenalties"
+            placeholder="0"
+            min="0"
+            step="1"
+            inputmode="numeric"
+          />
+          <button id="submitRunBtn" type="button" class="btn-secondary">
+            Submit Final Score
+          </button>
+          <p class="status" id="runStatus" role="status"></p>
+        </section>
       </div>
-    </div>
+    </main>
 
     <script type="module" src="js/admin.js"></script>
   </body>
